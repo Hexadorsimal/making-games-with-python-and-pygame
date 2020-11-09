@@ -3,9 +3,6 @@
 # http://inventwithpython.com/pygame
 # Released under a "Simplified BSD" license
 
-import random
-import pygame
-
 from tetromino import Game
 
 
@@ -20,14 +17,9 @@ def main():
 
     game.show_text_screen('Tetromino')
     while True:  # game loop
-        if random.randint(0, 1) == 0:
-            pygame.mixer.music.load('tetrisb.mid')
-        else:
-            pygame.mixer.music.load('tetrisc.mid')
-        pygame.mixer.music.play(-1, 0.0)
+        game.start_game()
         game.run()
-        pygame.mixer.music.stop()
-        game.show_text_screen('Game Over')
+        game.end_game()
         game.reset()
 
 

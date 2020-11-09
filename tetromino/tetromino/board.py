@@ -11,8 +11,12 @@ class Board:
         self.height = height
 
         self.board = []
-        for i in range(width):
-            self.board.append([self.blank] * height)
+        self.clear()
+
+    def clear(self):
+        self.board = []
+        for i in range(self.width):
+            self.board.append([self.blank] * self.height)
 
     def add_piece(self, piece):
         # fill in the board based on piece's location, shape, and rotation

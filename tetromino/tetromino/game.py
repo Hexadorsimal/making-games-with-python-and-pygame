@@ -1,3 +1,4 @@
+import random
 import sys
 import time
 import pygame
@@ -41,12 +42,24 @@ class Game:
         self.moving_right = False
         self.score = 0
 
+    def start_game(self):
+        self.reset()
+        if random.randint(0, 1) == 0:
+            pygame.mixer.music.load('tetrisb.mid')
+        else:
+            pygame.mixer.music.load('tetrisc.mid')
+        pygame.mixer.music.play(-1, 0.0)
+
+    def end_game(self):
+        pygame.mixer.music.stop()
+        self.show_text_screen('Game Over')
+
     def reset(self):
-        self.board = Board(self.board.width, self.board.height)
+        self.board.clear()
         self.last_move_down_time = time.time()
         self.last_move_sideways_time = time.time()
         self.last_fall_time = time.time()
-        self.moving_down = False  # note: there is no movingUp variable
+        self.moving_down = False
         self.moving_left = False
         self.moving_right = False
         self.score = 0

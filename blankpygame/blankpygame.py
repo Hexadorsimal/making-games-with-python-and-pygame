@@ -1,10 +1,13 @@
-import pygame, sys
-from pygame.locals import *
+import sys
+import pygame
+from pygame.constants import QUIT
+
 
 pygame.init()
 DISPLAYSURF = pygame.display.set_mode((400, 300))
 pygame.display.set_caption('Hello World!')
-while True: # main game loop
+
+while True:  # main game loop
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()

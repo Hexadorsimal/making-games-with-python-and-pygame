@@ -43,13 +43,13 @@ class Game:
 
     def run(self):
         self.display_surface.fill(self.background_color)
-        self.start_game_animation(self.main_board)
+        self.start_game_animation()
 
         while True:  # main game loop
             mouse_clicked = False
 
             self.display_surface.fill(self.background_color)  # drawing the window
-            self.draw_board(self.main_board, self.revealed_boxes)
+            self.draw_board(self.revealed_boxes)
 
             for event in pygame.event.get():  # event handling loop
                 if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
@@ -67,7 +67,7 @@ class Game:
                 if not self.revealed_boxes[boxx][boxy]:
                     self.draw_highlight_box(boxx, boxy)
                 if not self.revealed_boxes[boxx][boxy] and mouse_clicked:
-                    self.reveal_boxes_animation(self.main_board, [(boxx, boxy)])
+                    self.reveal_boxes_animation([(boxx, boxy)])
                     self.revealed_boxes[boxx][boxy] = True  # set the box as "revealed"
                     if self.first_selection is None:  # the current box was the first box clicked
                         self.first_selection = (boxx, boxy)
@@ -79,11 +79,11 @@ class Game:
                         if icon1shape != icon2shape or icon1color != icon2color:
                             # Icons don't match. Re-cover up both selections.
                             pygame.time.wait(1000)  # 1000 milliseconds = 1 sec
-                            self.cover_boxes_animation(self.main_board, [(self.first_selection[0], self.first_selection[1]), (boxx, boxy)])
+                            self.cover_boxes_animation([(self.first_selection[0], self.first_selection[1]), (boxx, boxy)])
                             self.revealed_boxes[self.first_selection[0]][self.first_selection[1]] = False
                             self.revealed_boxes[boxx][boxy] = False
-                        elif self.has_won(self.revealed_boxes):  # check if all pairs found
-                            self.game_won_animation(self.main_board)
+                        elif self.has_won():  # check if all pairs found
+                            self.game_won_animation()
                             pygame.time.wait(2000)
 
                             # Reset the board
@@ -91,12 +91,12 @@ class Game:
                             self.revealed_boxes = self.generate_revealed_boxes_data(False)
 
                             # Show the fully unrevealed board for a second.
-                            self.draw_board(self.main_board, self.revealed_boxes)
+                            self.draw_board(self.revealed_boxes)
                             pygame.display.update()
                             pygame.time.wait(1000)
 
                             # Replay the start game animation.
-                            self.start_game_animation(self.main_board)
+                            self.start_game_animation()
                         self.first_selection = None  # reset firstSelection variable
 
             # Redraw the screen and wait a clock tick.
@@ -195,17 +195,17 @@ class Game:
         pygame.display.update()
         self.fps_clock.tick(self.fps)
 
-    def reveal_boxes_animation(self, board, boxes_to_reveal):
+    def reveal_boxes_animation(self, boxes_to_reveal):
         # Do the "box reveal" animation.
         for coverage in range(self.box_size, (-self.reveal_speed) - 1, -self.reveal_speed):
-            self.draw_box_covers(board, boxes_to_reveal, coverage)
+            self.draw_box_covers(self.main_board, boxes_to_reveal, coverage)
 
-    def cover_boxes_animation(self, board, boxes_to_cover):
+    def cover_boxes_animation(self, boxes_to_cover):
         # Do the "box cover" animation.
         for coverage in range(0, self.box_size + self.reveal_speed, self.reveal_speed):
-            self.draw_box_covers(board, boxes_to_cover, coverage)
+            self.draw_box_covers(self.main_board, boxes_to_cover, coverage)
 
-    def draw_board(self, board, revealed):
+    def draw_board(self, revealed):
         # Draws all of the boxes in their covered or revealed state.
         for boxx in range(self.board_width):
             for boxy in range(self.board_height):
@@ -215,14 +215,14 @@ class Game:
                     pygame.draw.rect(self.display_surface, self.box_color, (left, top, self.box_size, self.box_size))
                 else:
                     # Draw the (revealed) icon.
-                    shape, color = self.get_shape_and_color(board, boxx, boxy)
+                    shape, color = self.get_shape_and_color(self.main_board, boxx, boxy)
                     self.draw_icon(shape, color, boxx, boxy)
 
     def draw_highlight_box(self, boxx, boxy):
         left, top = self.left_top_coords_of_box(boxx, boxy)
         pygame.draw.rect(self.display_surface, self.highlight_color, (left - 5, top - 5, self.box_size + 10, self.box_size + 10), 4)
 
-    def start_game_animation(self, board):
+    def start_game_animation(self):
         # Randomly reveal the boxes 8 at a time.
         covered_boxes = self.generate_revealed_boxes_data(False)
         boxes = []
@@ -232,12 +232,12 @@ class Game:
         random.shuffle(boxes)
         box_groups = self.split_into_groups_of(8, boxes)
 
-        self.draw_board(board, covered_boxes)
+        self.draw_board(covered_boxes)
         for boxGroup in box_groups:
-            self.reveal_boxes_animation(board, boxGroup)
-            self.cover_boxes_animation(board, boxGroup)
+            self.reveal_boxes_animation(boxGroup)
+            self.cover_boxes_animation(boxGroup)
 
-    def game_won_animation(self, board):
+    def game_won_animation(self):
         # flash the background color when the player has won
         covered_boxes = self.generate_revealed_boxes_data(True)
         color1 = self.light_background_color
@@ -246,14 +246,13 @@ class Game:
         for i in range(13):
             color1, color2 = color2, color1  # swap colors
             self.display_surface.fill(color1)
-            self.draw_board(board, covered_boxes)
+            self.draw_board(covered_boxes)
             pygame.display.update()
             pygame.time.wait(300)
 
-    @staticmethod
-    def has_won(revealed_boxes):
+    def has_won(self):
         # Returns True if all the boxes have been revealed, otherwise False
-        for i in revealed_boxes:
+        for i in self.revealed_boxes:
             if False in i:
                 return False  # return False if any boxes are covered.
         return True

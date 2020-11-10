@@ -6,6 +6,7 @@ import pygame
 from pygame.locals import *
 
 from .colors import *
+from .button import Button
 
 
 class Game:
@@ -32,19 +33,14 @@ class Game:
         self.x_margin = int((self.window_width - (2 * self.button_size) - self.button_gap_size) / 2)
         self.y_margin = int((self.window_height - (2 * self.button_size) - self.button_gap_size) / 2)
 
-        # Rect objects for each of the four buttons
-        self.yellow_rect = pygame.Rect(self.x_margin, self.y_margin, self.button_size, self.button_size)
-        self.blue_rect = pygame.Rect(self.x_margin + self.button_size + self.button_gap_size, self.y_margin, self.button_size, self.button_size)
-        self.red_rect = pygame.Rect(self.x_margin, self.y_margin + self.button_size + self.button_gap_size, self.button_size, self.button_size)
-        self.green_rect = pygame.Rect(self.x_margin + self.button_size + self.button_gap_size, self.y_margin + self.button_size + self.button_gap_size, self.button_size, self.button_size)
-
         pygame.init()
         self.fps_clock = pygame.time.Clock()
         self.display_surface = pygame.display.set_mode((self.window_width, self.window_height))
         pygame.display.set_caption('Simulate')
 
         self.basic_font = pygame.font.Font('freesansbold.ttf', 16)
-        self.info_surface = self.basic_font.render('Match the pattern by clicking on the button or using the Q, W, A, S keys.', 1, DARKGRAY)
+        self.info_surface = self.basic_font.render(
+            'Match the pattern by clicking on the button or using the Q, W, A, S keys.', True, DARKGRAY)
         self.info_rect = self.info_surface.get_rect()
         self.info_rect.topleft = (10, self.window_height - 25)
 
@@ -53,6 +49,14 @@ class Game:
         self.beep2 = pygame.mixer.Sound('beep2.ogg')
         self.beep3 = pygame.mixer.Sound('beep3.ogg')
         self.beep4 = pygame.mixer.Sound('beep4.ogg')
+
+        # Rect objects for each of the four buttons
+        self.buttons = [
+            Button(pygame.Rect(self.x_margin, self.y_margin, self.button_size, self.button_size), self.beep1, YELLOW, BRIGHTYELLOW),
+            Button(pygame.Rect(self.x_margin + self.button_size + self.button_gap_size, self.y_margin, self.button_size, self.button_size), self.beep2, BLUE, BRIGHTBLUE),
+            Button(pygame.Rect(self.x_margin, self.y_margin + self.button_size + self.button_gap_size, self.button_size, self.button_size), self.beep3, RED, BRIGHTRED),
+            Button(pygame.Rect(self.x_margin + self.button_size + self.button_gap_size, self.y_margin + self.button_size + self.button_gap_size, self.button_size, self.button_size), self.beep4, GREEN, BRIGHTGREEN),
+        ]
 
     def run(self):
         while True:  # main game loop
@@ -86,7 +90,7 @@ class Game:
                 # play the pattern
                 pygame.display.update()
                 pygame.time.wait(1000)
-                self.pattern.append(random.choice((YELLOW, BLUE, RED, GREEN)))
+                self.pattern.append(random.choice(self.buttons))
                 for button in self.pattern:
                     self.flash_button_animation(button)
                     pygame.time.wait(self.flash_delay)
@@ -121,7 +125,8 @@ class Game:
             pygame.display.update()
             self.fps_clock.tick(self.fps)
 
-    def terminate(self):
+    @staticmethod
+    def terminate():
         pygame.quit()
         sys.exit()
 
@@ -133,44 +138,25 @@ class Game:
                 self.terminate()  # terminate if the KEYUP event was for the Esc key
             pygame.event.post(event)  # put the other KEYUP event objects back
 
-    def flash_button_animation(self, color, animation_speed=50):
-        if color == YELLOW:
-            sound = self.beep1
-            flash_color = BRIGHTYELLOW
-            rectangle = self.yellow_rect
-        elif color == BLUE:
-            sound = self.beep2
-            flash_color = BRIGHTBLUE
-            rectangle = self.blue_rect
-        elif color == RED:
-            sound = self.beep3
-            flash_color = BRIGHTRED
-            rectangle = self.red_rect
-        elif color == GREEN:
-            sound = self.beep4
-            flash_color = BRIGHTGREEN
-            rectangle = self.green_rect
-
+    def flash_button_animation(self, button, animation_speed=50):
         orig_surf = self.display_surface.copy()
         flash_surf = pygame.Surface((self.button_size, self.button_size))
         flash_surf = flash_surf.convert_alpha()
-        r, g, b = flash_color
-        sound.play()
+        r, g, b = button.flash_color
+        button.sound.play()
         for start, end, step in ((0, 255, 1), (255, 0, -1)):  # animation loop
             for alpha in range(start, end, animation_speed * step):
                 self.check_for_quit()
                 self.display_surface.blit(orig_surf, (0, 0))
                 flash_surf.fill((r, g, b, alpha))
-                self.display_surface.blit(flash_surf, rectangle.topleft)
+                self.display_surface.blit(flash_surf, button.rect.topleft)
                 pygame.display.update()
                 self.fps_clock.tick(self.fps)
         self.display_surface.blit(orig_surf, (0, 0))
 
     def draw_buttons(self):
-        pygame.draw.rect(self.display_surface, YELLOW, self.yellow_rect)
-        pygame.draw.rect(self.display_surface, BLUE, self.blue_rect)
-        pygame.draw.rect(self.display_surface, RED, self.red_rect)
-        pygame.draw.rect(self.display_surface, GREEN, self.green_rect)
+        for button in self.buttons:
+            pygame.draw.rect(self.display_surface, button.color, button.rect)
 
     def change_background_animation(self, animation_speed=40):
         new_bg_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
@@ -216,12 +202,6 @@ class Game:
                     self.fps_clock.tick(self.fps)
 
     def get_button_clicked(self, x, y):
-        if self.yellow_rect.collidepoint((x, y)):
-            return YELLOW
-        elif self.blue_rect.collidepoint((x, y)):
-            return BLUE
-        elif self.red_rect.collidepoint((x, y)):
-            return RED
-        elif self.green_rect.collidepoint((x, y)):
-            return GREEN
-        return None
+        for button in self.buttons:
+            if button.rect.collidepoint((x, y)):
+                return button
